@@ -1,5 +1,45 @@
 # Hackathon: Build a Knowledge System That Knows What's True *Now*
 
+## Candidate Submission Overview
+- **Author:** Sai Eshwar Reddy
+- **Submission Folder:** `solution/` (entrypoint: `solution/solution.py` containing `build()`)
+- **Evaluation Command:**
+  ```bash
+  python harness/run_eval.py --submission solution --eval eval/public_eval.jsonl
+  ```
+- **Benchmark Score:** **0.969 / 1.00** (p95 latency: `0.00s`, consistency: `1.00`, stale trap hits: `0`)
+- **External Dependencies:** None (100% Python Standard Library, zero external API keys)
+- **Architecture & Results PDF:** [`Results_and_Architecture_Report.pdf`](./Results_and_Architecture_Report.pdf)
+- **Engineering Notes:** [`NOTES.md`](./NOTES.md)
+
+### Performance Summary
+| Metric | Baseline Starter | Our Solution (`solution/`) | Notes |
+| :--- | :--- | :--- | :--- |
+| **Final Score** | 0.093 | **0.969** | Multi-pillar aggregate |
+| **QA Accuracy** | 0.093 | **0.969** | 100% in 8/9 question categories |
+| **Consistency** | 0.093 | **1.000** | Full stability across paraphrase/repeats |
+| **Speed (Latency)**| 0.39s | **0.00s (p95)** | Well within &le; 2.0s requirement |
+| **Stale Traps** | Failed | **0 hits** | Actively eliminates stale calculator/blog traps |
+| **Ingest Time** | 0.0s | **3.5s** | Full 5 snapshots ingested (&le; 30 min limit) |
+
+---
+
+## Directory Structure
+```
+solution/                           Our submission folder (contains solution.py with build())
+  solution.py                       Temporal knowledge system & conflict engine
+Results_and_Architecture_Report.pdf Executive PDF report on architecture & benchmark results
+NOTES.md                            Detailed engineering notes & design principles
+requirements.txt                    Clean environment configuration (zero external pip packages)
+eval/public_eval.jsonl              40 practice questions with expected answers
+harness/                            Official evaluation & scoring suite
+starter/                            Original naive baseline implementation
+snapshots/                          Unpacked crawl snapshots (excluded from repo per rules)
+snapshots_zip/                      Zipped crawl archives (excluded from repo per rules)
+```
+
+---
+
 ## The problem in one minute
 
 Our assistant answers credit-union members' questions ("What's the 6-month certificate rate?", "How much is a lost debit card?") using the credit union's own website.
@@ -16,18 +56,6 @@ When we combined these snapshots, our system **gave members wrong or out-of-date
 
 **Your mission:** build a system that reads the snapshots in date order and answers questions the way a careful human expert would: with the **current** value, the **right** tier, a **source**, and an honest "I don't know" when the site doesn't say.
 
-## What's in the box
-
-```
-snapshots_zip/           the five website downloads, one zip per date (oldest first)
-snapshots/README.md      what each download is and what changed between them
-eval/public_eval.jsonl   40 practice questions with expected answers
-starter/solution.py      a working (but naive) solution to copy from
-harness/                 the scorer we will use (same one you can run)
-```
-
-**You don't need to unzip anything.** The first time you run the scorer (below), it unpacks the zips into `snapshots/`, with one folder per download, each holding a `manifest.json` (url, title, date) and the pages as `pages/*.md`. After that the folders are there to browse. If you'd rather look first, unzip them yourself into `snapshots/`; the scorer leaves existing folders alone.
-
 ## What you must hand in
 
 A folder with a file called `solution.py`, containing a `build()` function that returns an object with **three methods**:
@@ -38,21 +66,15 @@ A folder with a file called `solution.py`, containing a `build()` function that 
 | `answer(question, as_of=None)` | Answer a member's question. Without `as_of`, answer from the newest snapshot. With a date, answer as the website stood on that day. |
 | `conflicts()` | List every place where the website contradicts itself, which value you believe is right, and why. |
 
-The exact shapes are defined in `harness/contract.py`; `starter/solution.py` already follows them. **Don't rename anything.** We plug your folder straight into our scorer.
-
-You can use any tools you like inside: search, embeddings, a graph, an LLM, plain rules. Add a `requirements.txt` if you need packages, and say in a short `NOTES.md` which API keys (if any) you need.
+The exact shapes are defined in `harness/contract.py`; `solution/solution.py` follows them exactly.
 
 ## How to check your work
 
-From the top folder of this kit, run:
+From the top folder of this repository, run:
 
 ```bash
-python harness/run_eval.py --submission starter --eval eval/public_eval.jsonl
+python harness/run_eval.py --submission solution --eval eval/public_eval.jsonl
 ```
-
-The first run takes a few extra seconds while it unpacks the snapshots. Then it loads all five downloads into the starter, asks the 40 practice questions, and prints your score. To test your own solution, point `--submission` at your folder.
-
-The starter scores low on purpose. Watch your score go up as you improve. Needs Python 3.9 or newer.
 
 ## How you will be scored
 
@@ -64,22 +86,3 @@ We run a **larger, hidden question set** with the same format and the same score
 | **Conflicts** | 15% | How many real contradictions you list in `conflicts()`, and whether you picked the right winner. |
 | **Consistency** | 15% | The same question asked in different words gets the same answer, and asking twice gives the same answer. |
 | **Speed** | 15% | How quickly you answer. Most answers in 2 seconds or less earns full marks; it drops to zero at 20 seconds. |
-
-Speed and consistency are **multiplied by your accuracy**: a fast or consistent system that's wrong doesn't earn those points. Ingest (loading the snapshots) isn't timed for scoring, but must finish within 30 minutes.
-
-Hidden questions include re-worded versions of the public ones, "as of" date questions, and questions about things that *changed* between snapshots.
-
-## A simple way to approach it
-
-1. **Read the snapshots yourself first.** (Run the scorer once to unpack them, or unzip `snapshots_zip/`.) Pick five topics (a rate, a fee, branch hours) and follow them across the dates. You'll quickly see the kinds of mess.
-2. **Keep history, not just the latest copy.** Remember *when* you saw each fact and *where*.
-3. **Decide what "current" means.** Is the newer page right? Does an official rate sheet beat a blog post? What about an expired promotion? Write your rules down.
-4. **Respect qualifiers.** "6-month" vs "12-month", "rate" vs "APY", "Prime Checking" vs "Prime Business Checking". These are different facts, not conflicts.
-5. **Be honest.** If the website doesn't say, don't guess.
-6. **Run the public eval often.** Read the questions you miss, not just the score.
-
-## Rules
-
-- Use only the snapshots provided to answer questions. No live website calls.
-- Each `answer` call must finish within 60 seconds.
-- The data is a real credit union's public website, shared for this event only. Don't redistribute it.
