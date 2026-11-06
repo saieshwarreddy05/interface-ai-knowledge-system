@@ -1,7 +1,7 @@
 # Hackathon: Build a Knowledge System That Knows What's True *Now*
 
 ## Candidate Submission Overview
-- **Author:** Sai Eshwar Reddy
+- **Author:** Sai Nandyala
 - **Submission Folder:** `solution/` (entrypoint: `solution/solution.py` containing `build()`)
 - **Evaluation Command:**
   ```bash
