@@ -1,0 +1,4 @@
+# Requirements for Dupaco Knowledge System
+# The solution is 100% self-contained and implemented using Python standard library
+# (math, re, sys, collections, dataclasses, pathlib, typing).
+# No external pip packages or API keys are required.

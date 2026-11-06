@@ -1,0 +1,11 @@
+# Ignore test output and cached bytecode
+results/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+
+# Exclude supplied website snapshots as requested in assignment guidelines
+snapshots/
+snapshots_zip/
+*.zip
